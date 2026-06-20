@@ -1,0 +1,9 @@
+# Заборонити прямий доступ до файлів даних через веб.
+# PHP читає leaderboard.json напряму з файлової системи, тож рейтинг працює.
+<IfModule mod_authz_core.c>
+  Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+  Order allow,deny
+  Deny from all
+</IfModule>

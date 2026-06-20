@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-L4PWWPSW96"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-L4PWWPSW96');
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FARKLE — консольна гра</title>
+  <meta name="theme-color" content="#050805" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="css/styles.css?v=12" />
+</head>
+<body>
+  <div id="app">
+
+    <!-- ============ МЕНЮ ============ -->
+    <section id="menu" class="screen">
+      <pre class="logo" aria-label="FARKLE">
+ ███████╗ █████╗ ██████╗ ██╗  ██╗██╗     ███████╗
+ ██╔════╝██╔══██╗██╔══██╗██║ ██╔╝██║     ██╔════╝
+ █████╗  ███████║██████╔╝█████╔╝ ██║     █████╗
+ ██╔══╝  ██╔══██║██╔══██╗██╔═██╗ ██║     ██╔══╝
+ ██║     ██║  ██║██║  ██║██║  ██╗███████╗███████╗
+ ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚══════╝</pre>
+      <p class="tagline"><span data-i18n="menu.tagline">// кубикова гра на ризик</span><span class="cursor">_</span></p>
+      <div class="menu-buttons">
+        <button id="btn-continue" data-action="continue" class="hidden" data-i18n="menu.continue">▸ Продовжити гру</button>
+        <button data-action="play-ai" data-i18n="menu.playAI">Грати проти комп’ютера</button>
+        <button data-action="play-solo" data-i18n="menu.playSolo">Соло (рекорд)</button>
+        <button data-action="settings" data-i18n="menu.settings">Налаштування</button>
+        <button data-action="stats" data-i18n="menu.stats">Статистика</button>
+        <button data-action="leaderboard" data-i18n="menu.leaderboard">Рейтинг</button>
+        <button data-action="rules" data-i18n="menu.rules">Правила</button>
+      </div>
+      <div class="menu-highscore"><span data-i18n="menu.record">Соло-рекорд:</span> <span id="menu-hs">—</span></div>
+      <footer class="menu-footer">v<span id="app-version"></span></footer>
+    </section>
+
+    <!-- ============ ГРА ============ -->
+    <section id="game" class="screen hidden">
+      <header class="topbar">
+        <div class="scoreboard" id="scoreboard"></div>
+        <div class="topbar-right">
+          <div class="target" id="target">Ціль: 10000</div>
+          <button data-action="rules" class="small" data-i18n-html="topbar.rules">Правила <kbd>H</kbd></button>
+          <button id="btn-sound" data-action="toggle-sound" class="small" aria-pressed="true"><span id="sound-label">🔊 Звук</span> <kbd>M</kbd></button>
+          <button data-action="menu" class="small" data-i18n-html="topbar.menu">Меню <kbd>Esc</kbd></button>
+        </div>
+      </header>
+
+      <div class="turn-info" id="turn-info"></div>
+      <div class="setaside" id="setaside"></div>
+      <div class="dice-row" id="dice-row"></div>
+      <div class="hint" id="hint"></div>
+
+      <div class="controls" id="controls">
+        <button id="btn-roll" data-action="roll" data-i18n-html="btn.roll">Кинути <kbd>⏎</kbd></button>
+        <button id="btn-reroll" data-action="reroll" data-i18n-html="btn.reroll">Відкласти й кинути ще <kbd>⏎</kbd></button>
+        <button id="btn-bank" data-action="bank" data-i18n-html="btn.bank">Забанкувати <kbd>B</kbd></button>
+        <button id="btn-auto" data-action="auto-select" data-i18n-html="btn.auto">Вибрати очкові <kbd>A</kbd></button>
+      </div>
+
+      <div class="legend" data-i18n-html="legend">
+        Гарячі клавіші:
+        <kbd>1</kbd>–<kbd>6</kbd> вибрати / зняти кубик ·
+        <kbd>A</kbd> вибрати всі очкові ·
+        <kbd>⏎</kbd> кинути або кинути ще ·
+        <kbd>B</kbd> забанкувати ·
+        <kbd>M</kbd> звук ·
+        <kbd>H</kbd> правила ·
+        <kbd>Esc</kbd> у меню
+      </div>
+
+      <div class="console-label" data-i18n="console.label">// журнал</div>
+      <div class="console" id="console"></div>
+    </section>
+
+    <!-- ============ ПРАВИЛА ============ -->
+    <div id="rules-modal" class="modal hidden">
+      <div class="modal-box">
+        <h2 data-i18n="rules.title">Правила Farkle</h2>
+        <p data-i18n-html="rules.p1">Кидаєте 6 кубиків. Після кожного кидка <b>відкладаєте щонайменше один
+        очковий кубик</b>, потім обираєте: кинути решту ще раз (ризик) або
+        <b>забанкувати</b> очки ходу в загальний рахунок.</p>
+        <p data-i18n-html="rules.p2">Якщо кидок <b>не дає жодного очка</b> — це <b class="bad">FARKLE</b>:
+        усі очки поточного ходу згоряють, хід переходить далі.</p>
+        <p data-i18n-html="rules.p3">Відклали всі 6 кубиків? <b>Гарячі кубики</b> — берете 6 нових і
+        продовжуєте хід.</p>
+        <p data-i18n-html="rules.p4">Перемагає той, хто перший набере цільовий рахунок. Після цього суперник
+        отримує один останній хід, щоб обійти вас.</p>
+        <table class="rules-table">
+          <tr><th data-i18n="rules.colCombo">Комбінація</th><th data-i18n="rules.colPoints">Очки</th></tr>
+          <tr><td data-i18n="combo.one1">Одна 1</td><td>100</td></tr>
+          <tr><td data-i18n="combo.one5">Одна 5</td><td>50</td></tr>
+          <tr><td data-i18n="combo.three1">Три 1</td><td>1000</td></tr>
+          <tr><td data-i18n="combo.threeOther">Три 2 / 3 / 4 / 5 / 6</td><td>200 / 300 / 400 / 500 / 600</td></tr>
+          <tr><td data-i18n="combo.four">Чотири однакових</td><td>1000</td></tr>
+          <tr><td data-i18n="combo.five">П’ять однакових</td><td>2000</td></tr>
+          <tr><td data-i18n="combo.six">Шість однакових</td><td>3000</td></tr>
+          <tr><td data-i18n="combo.straight">Стріт 1-2-3-4-5-6</td><td>1500</td></tr>
+          <tr><td data-i18n="combo.threePairs">Три пари</td><td>1500</td></tr>
+          <tr><td data-i18n="combo.twoTriplets">Дві трійки</td><td>2500</td></tr>
+        </table>
+        <p class="keys" data-i18n-html="rules.keys">Клавіші: <b>1–6</b> вибрати кубик · <b>A</b> вибрати очкові ·
+        <b>Enter</b> кинути / кинути ще · <b>B</b> банк · <b>Esc</b> меню.</p>
+        <button data-action="rules-close" data-i18n="modal.close">[ Закрити ]</button>
+      </div>
+    </div>
+
+    <!-- ============ НАЛАШТУВАННЯ ============ -->
+    <div id="settings-modal" class="modal hidden">
+      <div class="modal-box">
+        <h2 data-i18n="menu.settings">Налаштування</h2>
+        <label for="set-name" data-i18n="set.name">Ім’я гравця (для рейтингу):</label>
+        <div class="name-row">
+          <input type="text" id="set-name" maxlength="16" autocomplete="off" spellcheck="false" placeholder="напр. Олег" data-i18n-ph="set.namePlaceholder" />
+          <button type="button" data-action="save-name" class="small" data-i18n="set.save">Зберегти</button>
+        </div>
+        <div id="name-status" class="name-status" aria-live="polite"></div>
+        <label><span data-i18n="set.target">Ціль очок:</span>
+          <select id="set-target">
+            <option value="5000">5000</option>
+            <option value="10000">10000</option>
+            <option value="custom" data-i18n="set.targetCustom">Власна…</option>
+          </select>
+        </label>
+        <input type="number" id="set-target-custom" class="hidden" min="1000" step="500" />
+        <label><input type="checkbox" id="set-openrule" /> <span data-i18n="set.openRule">Правило «зайти з 500»</span></label>
+        <label><span data-i18n="set.difficulty">Складність AI:</span>
+          <select id="set-difficulty">
+            <option value="easy" data-i18n="diff.easy">Легко</option>
+            <option value="normal" data-i18n="diff.normal">Норм</option>
+            <option value="hard" data-i18n="diff.hard">Складно</option>
+          </select>
+        </label>
+        <label><input type="checkbox" id="set-sound" /> <span data-i18n="set.sound">Звук</span></label>
+        <label><span data-i18n="set.theme">Тема:</span>
+          <select id="set-theme">
+            <option value="green" data-i18n="theme.green">Зелена</option>
+            <option value="amber" data-i18n="theme.amber">Янтарна</option>
+            <option value="blue" data-i18n="theme.blue">Синя</option>
+          </select>
+        </label>
+        <label><span data-i18n="set.language">Мова:</span>
+          <select id="set-lang">
+            <option value="uk">Українська</option>
+            <option value="en">English</option>
+          </select>
+        </label>
+        <p class="keys" data-i18n="set.note">Зміни застосовуються до наступної гри (тема та звук — одразу).</p>
+        <button data-action="settings-close" data-i18n="modal.close">[ Закрити ]</button>
+      </div>
+    </div>
+
+    <!-- ============ СТАТИСТИКА ============ -->
+    <div id="stats-modal" class="modal hidden">
+      <div class="modal-box">
+        <h2 data-i18n="stats.title">Статистика</h2>
+        <table class="rules-table" id="stats-table"></table>
+        <div class="modal-actions">
+          <button data-action="stats-reset" data-i18n="stats.reset">[ Скинути ]</button>
+          <button data-action="stats-close" data-i18n="modal.close">[ Закрити ]</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ РЕЙТИНГ ============ -->
+    <div id="leaderboard-modal" class="modal hidden">
+      <div class="modal-box">
+        <h2 data-i18n="leaderboard.title">Рейтинг гравців</h2>
+        <div class="lb-tabs" id="lb-tabs">
+          <button class="lb-tab active" data-action="lb-tab" data-lb="ai" data-i18n="lb.tab.ai">Перемоги (AI)</button>
+          <button class="lb-tab" data-action="lb-tab" data-lb="turn" data-i18n="lb.tab.turn">Найкращий хід</button>
+          <button class="lb-tab" data-action="lb-tab" data-lb="solo" data-i18n="lb.tab.solo">Соло (ходів)</button>
+        </div>
+        <div id="lb-body" class="lb-body"></div>
+        <div class="modal-actions">
+          <button data-action="lb-refresh" data-i18n="lb.refresh">[ Оновити ]</button>
+          <button data-action="lb-close" data-i18n="modal.close">[ Закрити ]</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ ПЕРЕМОГА ============ -->
+    <div id="victory-modal" class="modal hidden">
+      <div class="modal-box victory-box">
+        <pre class="victory-banner" id="victory-banner"></pre>
+        <div id="victory-detail"></div>
+        <div class="victory-actions">
+          <button data-action="play-again" data-i18n-html="victory.playAgain">Нова гра <kbd>⏎</kbd></button>
+          <button data-action="menu-from-victory" data-i18n-html="victory.menu">Меню <kbd>Esc</kbd></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Озвучення для скрінрідерів -->
+    <div id="aria-live" class="visually-hidden" aria-live="polite"></div>
+
+  </div>
+
+  <!-- Класичні скрипти у порядку залежностей (без ES-модулів — працює на file://) -->
+  <!-- ?v=N — версія складання проти кешу. Після правки будь-якого js/css підніми число
+       тут (на всіх тегах) і VERSION у sw.js — браузер підтягне свіже. -->
+  <script src="js/scoring.js?v=12"></script>
+  <script src="js/sound.js?v=12"></script>
+  <script src="js/store.js?v=12"></script>
+  <script src="js/i18n.js?v=12"></script>
+  <script src="js/net.js?v=12"></script>
+  <script src="js/ai.js?v=12"></script>
+  <script src="js/game.js?v=12"></script>
+  <script src="js/ui.js?v=12"></script>
+  <script src="js/tests.js?v=12"></script>
+  <script src="js/main.js?v=12"></script>
+</body>
+</html>

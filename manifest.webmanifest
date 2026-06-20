@@ -1,0 +1,15 @@
+{
+  "name": "Farkle — консольна гра",
+  "short_name": "Farkle",
+  "description": "Кубикова гра Farkle у темному консольному стилі.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#050805",
+  "theme_color": "#050805",
+  "lang": "uk",
+  "icons": [
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
