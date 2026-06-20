@@ -15,7 +15,7 @@
   <meta name="theme-color" content="#050805" />
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="css/styles.css?v=12" />
+  <link rel="stylesheet" href="css/styles.css?v=14" />
 </head>
 <body>
   <div id="app">
@@ -39,7 +39,6 @@
         <button data-action="leaderboard" data-i18n="menu.leaderboard">Рейтинг</button>
         <button data-action="rules" data-i18n="menu.rules">Правила</button>
       </div>
-      <div class="menu-highscore"><span data-i18n="menu.record">Соло-рекорд:</span> <span id="menu-hs">—</span></div>
       <footer class="menu-footer">v<span id="app-version"></span></footer>
     </section>
 
@@ -65,17 +64,6 @@
         <button id="btn-reroll" data-action="reroll" data-i18n-html="btn.reroll">Відкласти й кинути ще <kbd>⏎</kbd></button>
         <button id="btn-bank" data-action="bank" data-i18n-html="btn.bank">Забанкувати <kbd>B</kbd></button>
         <button id="btn-auto" data-action="auto-select" data-i18n-html="btn.auto">Вибрати очкові <kbd>A</kbd></button>
-      </div>
-
-      <div class="legend" data-i18n-html="legend">
-        Гарячі клавіші:
-        <kbd>1</kbd>–<kbd>6</kbd> вибрати / зняти кубик ·
-        <kbd>A</kbd> вибрати всі очкові ·
-        <kbd>⏎</kbd> кинути або кинути ще ·
-        <kbd>B</kbd> забанкувати ·
-        <kbd>M</kbd> звук ·
-        <kbd>H</kbd> правила ·
-        <kbd>Esc</kbd> у меню
       </div>
 
       <div class="console-label" data-i18n="console.label">// журнал</div>
@@ -208,15 +196,15 @@
   <!-- Класичні скрипти у порядку залежностей (без ES-модулів — працює на file://) -->
   <!-- ?v=N — версія складання проти кешу. Після правки будь-якого js/css підніми число
        тут (на всіх тегах) і VERSION у sw.js — браузер підтягне свіже. -->
-  <script src="js/scoring.js?v=12"></script>
-  <script src="js/sound.js?v=12"></script>
-  <script src="js/store.js?v=12"></script>
-  <script src="js/i18n.js?v=12"></script>
-  <script src="js/net.js?v=12"></script>
-  <script src="js/ai.js?v=12"></script>
-  <script src="js/game.js?v=12"></script>
-  <script src="js/ui.js?v=12"></script>
-  <script src="js/tests.js?v=12"></script>
-  <script src="js/main.js?v=12"></script>
+  <script src="js/scoring.js?v=14"></script>
+  <script src="js/sound.js?v=14"></script>
+  <script src="js/store.js?v=14"></script>
+  <script src="js/i18n.js?v=14"></script>
+  <script src="js/net.js?v=14"></script>
+  <script src="js/ai.js?v=14"></script>
+  <script src="js/game.js?v=14"></script>
+  <script src="js/ui.js?v=14"></script>
+  <script src="js/tests.js?v=14"></script>
+  <script src="js/main.js?v=14"></script>
 </body>
 </html>

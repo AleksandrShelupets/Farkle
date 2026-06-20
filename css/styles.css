@@ -129,6 +129,8 @@ button {
   cursor: pointer;
   text-shadow: var(--glow);
   text-align: left;
+  -webkit-user-select: none;
+  user-select: none;
   transition: background 0.12s, color 0.12s, border-color 0.12s;
 }
 button:hover:not(:disabled) {
@@ -408,8 +410,14 @@ button:hover:not(:disabled) kbd { background: var(--bg); color: var(--fg); }
 @media (max-width: 680px) {
   #app { padding: 16px; }
   .topbar { flex-direction: column; align-items: flex-start; }
-  .die { width: 64px; height: 64px; }
-  .die-face { font-size: 16px; letter-spacing: 3px; }
+
+  /* Кубики розтягуються на всю ширину екрана: 6 комірок по 1/6 ширини рядка,
+     квадратні (aspect-ratio), розмір грані масштабується з в'юпортом. */
+  .dice-row { gap: 6px; min-height: calc((100vw - 62px) / 6 + 24px); } /* pad 16×2 + 5 проміжків×6 */
+  .die-cell { flex: 0 0 calc((100% - 30px) / 6); min-width: 0; }       /* 5 проміжків × 6px = 30px */
+  .die { width: 100%; height: auto; aspect-ratio: 1 / 1; }
+  .die-face { font-size: clamp(12px, 3.6vw, 22px); letter-spacing: 0.16em; }
+
   .menu-buttons button { min-width: 0; width: 100%; }
   .controls button { flex: 1 1 auto; }
 }
@@ -441,10 +449,9 @@ button:hover:not(:disabled) kbd { background: var(--bg); color: var(--fg); }
   .scoreboard { gap: 6px; order: 2; width: 100%; }
   .player { padding: 4px 8px; }
 
-  /* Кубики дрібніші, проте зручні для дотику (комірка з підписом вища). */
-  .dice-row { gap: 8px; min-height: 76px; } /* 52px die + 6px gap + ~15px die-key */
-  .die { width: 52px; height: 52px; }
-  .die-face { font-size: 14px; letter-spacing: 2px; }
+  /* Кубики так само на всю ширину; менший відступ #app → перерахунок 1/6. */
+  .dice-row { gap: 5px; min-height: calc((100vw - 45px) / 6 + 22px); } /* pad 10×2 + 5 проміжків×5 */
+  .die-cell { flex-basis: calc((100% - 25px) / 6); }                   /* 5 проміжків × 5px = 25px */
   .die-key { font-size: 11px; }
 
   .turn-info { font-size: 12px; min-height: 34px; }

@@ -1,7 +1,7 @@
 // sw.js — service worker: кеш оболонки для офлайну (працює лише по http/https).
 // VERSION має збігатися з ?v=N в index.html. Підняв число — старий кеш чиститься,
 // а js/css підтягуються свіжими (бо змінюється і назва кешу, і URL із ?v=).
-var VERSION = '12';
+var VERSION = '14';
 var CACHE = 'farkle-v' + VERSION;
 var Q = '?v=' + VERSION;
 var ASSETS = [
