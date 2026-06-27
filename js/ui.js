@@ -82,7 +82,9 @@ window.Farkle = window.Farkle || {};
       case 'settings-close': closeModal('settings-modal'); break;
       case 'stats': call('onOpenStats'); break;
       case 'stats-close': closeModal('stats-modal'); break;
-      case 'stats-reset': call('onStatsReset'); break;
+      case 'stats-reset': openModal('confirm-modal'); break;
+      case 'confirm-yes': closeModal('confirm-modal'); call('onStatsReset'); break;
+      case 'confirm-no': closeModal('confirm-modal'); break;
       case 'save-name': call('onSettingChange', 'playerName', el.nameInput ? el.nameInput.value : ''); break;
       case 'leaderboard': call('onOpenLeaderboard'); break;
       case 'lb-close': closeModal('leaderboard-modal'); break;
@@ -105,7 +107,7 @@ window.Farkle = window.Farkle || {};
   }
 
   function topModal() {
-    var ids = ['victory-modal', 'settings-modal', 'stats-modal', 'leaderboard-modal', 'rules-modal'];
+    var ids = ['confirm-modal', 'victory-modal', 'settings-modal', 'stats-modal', 'leaderboard-modal', 'rules-modal'];
     for (var i = 0; i < ids.length; i++) {
       var m = $(ids[i]);
       if (m && !m.classList.contains('hidden')) return ids[i];
@@ -154,7 +156,7 @@ window.Farkle = window.Farkle || {};
 
   // ---- Екрани та модалки ----
   function closeAllModals() {
-    ['rules-modal', 'settings-modal', 'stats-modal', 'leaderboard-modal', 'victory-modal'].forEach(closeModal);
+    ['confirm-modal', 'rules-modal', 'settings-modal', 'stats-modal', 'leaderboard-modal', 'victory-modal'].forEach(closeModal);
   }
   function showMenu() {
     cancelRoll();
@@ -287,6 +289,7 @@ window.Farkle = window.Farkle || {};
 
     // Інфо про хід.
     var parts = [t('game.turnPoints', { n: game.turnTotal() }), t('game.freeDice', { n: game.dice.length })];
+    if (game.mode === 'solo' && opts.turns) parts.push(t('game.turnCount', { n: opts.turns }));
     if (game.inFinalRound()) parts.push(t('game.finalRound'));
     el.turnInfo.textContent = parts.join('   │   ');
 

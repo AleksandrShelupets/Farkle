@@ -14,7 +14,7 @@ window.Farkle = window.Farkle || {};
   var i18n = window.Farkle.i18n;
   function t(key, params) { return i18n.t(key, params); }
 
-  var APP_VERSION = '1.013';   // версія гри (показується у футері меню; бампай при релізі)
+  var APP_VERSION = '1.015';   // версія гри (показується у футері меню; бампай при релізі)
   var AI_DELAY = 750;          // мс між кроками ходу AI
   var FARKLE_PAUSE = 1200;
 
@@ -75,7 +75,7 @@ window.Farkle = window.Farkle || {};
   }
 
   function render(extra) {
-    ui.renderGame(game, Object.assign({ highscore: bestTurnsLabel() }, extra || {}));
+    ui.renderGame(game, Object.assign({ highscore: bestTurnsLabel(), turns: turnsPlayed }, extra || {}));
   }
 
   // ---------- Хід ----------

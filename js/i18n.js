@@ -39,6 +39,7 @@ window.Farkle = window.Farkle || {};
       'game.record': 'Рекорд: {v}',
       'game.turnPoints': 'Очки ходу: {n}',
       'game.freeDice': 'Вільних кубиків: {n}',
+      'game.turnCount': 'Хід: {n}',
       'game.finalRound': '⚑ ФІНАЛЬНЕ КОЛО',
       'game.setAside': 'Відкладено: ',
       'game.pressRoll': 'Натисніть «Кинути», щоб почати хід',
@@ -126,6 +127,10 @@ window.Farkle = window.Farkle || {};
 
       // Модалки
       'modal.close': '[ Закрити ]',
+      'confirm.title': 'Підтвердження',
+      'confirm.resetStats': 'Скинути всю статистику? Цю дію не можна скасувати.',
+      'confirm.yes': '[ Так ]',
+      'confirm.no': '[ Ні ]',
       'rules.title': 'Правила Farkle',
       'rules.p1': 'Кидаєте 6 кубиків. Після кожного кидка <b>відкладаєте щонайменше один очковий кубик</b>, потім обираєте: кинути решту ще раз (ризик) або <b>забанкувати</b> очки ходу в загальний рахунок.',
       'rules.p2': 'Якщо кидок <b>не дає жодного очка</b> — це <b class="bad">FARKLE</b>: усі очки поточного ходу згоряють, хід переходить далі.',
@@ -207,6 +212,7 @@ window.Farkle = window.Farkle || {};
       'game.record': 'Record: {v}',
       'game.turnPoints': 'Turn points: {n}',
       'game.freeDice': 'Free dice: {n}',
+      'game.turnCount': 'Turn: {n}',
       'game.finalRound': '⚑ FINAL ROUND',
       'game.setAside': 'Set aside: ',
       'game.pressRoll': 'Press “Roll” to start your turn',
@@ -294,6 +300,10 @@ window.Farkle = window.Farkle || {};
 
       // Modals
       'modal.close': '[ Close ]',
+      'confirm.title': 'Confirm',
+      'confirm.resetStats': 'Reset all statistics? This cannot be undone.',
+      'confirm.yes': '[ Yes ]',
+      'confirm.no': '[ No ]',
       'rules.title': 'Farkle Rules',
       'rules.p1': 'You roll 6 dice. After each roll you <b>set aside at least one scoring die</b>, then choose: reroll the rest (risk) or <b>bank</b> the turn points into your total.',
       'rules.p2': 'If a roll <b>scores nothing</b> it’s a <b class="bad">FARKLE</b>: all points from the current turn are lost and play passes on.',
