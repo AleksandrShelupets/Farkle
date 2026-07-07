@@ -8,19 +8,27 @@ window.Farkle = window.Farkle || {};
 
   var scoring = window.Farkle.scoring;
 
-  function rollDie() {
-    return Math.floor(Math.random() * 6) + 1;
-  }
-  function rollN(n) {
-    var a = [];
-    for (var i = 0; i < n; i++) a.push(rollDie());
-    return a;
+  // mulberry32 — детермінований ГПВЧ для сідованих режимів (щоденний виклик).
+  // Стан — одне 32-бітне число, тож він тривіально серіалізується у збереження гри.
+  function mulberryStep(state) {
+    var z = (state + 0x6D2B79F5) | 0;
+    var t = Math.imul(z ^ (z >>> 15), 1 | z);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return { state: z, value: ((t ^ (t >>> 14)) >>> 0) / 4294967296 };
   }
 
-  // opts: { mode: 'ai' | 'solo', target?: number, playerName?, aiName? }
+  // opts: { mode: 'ai' | 'solo', variant?: 'race' | 'attack' | 'daily',
+  //         turnLimit?: number, seed?: number, dailyDate?: string,
+  //         target?: number, playerName?, aiName? }
   function Game(opts) {
     opts = opts || {};
     this.mode = opts.mode === 'solo' ? 'solo' : 'ai';
+    this.variant = (this.mode === 'solo' && (opts.variant === 'attack' || opts.variant === 'daily'))
+      ? opts.variant : 'race';
+    this.turnLimit = this.variant === 'race' ? 0 : (opts.turnLimit || 10);
+    this.dailyDate = this.variant === 'daily' ? (opts.dailyDate || '') : '';
+    this.seed = (typeof opts.seed === 'number') ? (opts.seed >>> 0) : null;
+    this.rngState = this.seed;
     this.target = opts.target || 10000;
     this.openRule = !!opts.openRule;        // правило «зайти з 500»
     this.openThreshold = opts.openThreshold || 500;
@@ -34,6 +42,18 @@ window.Farkle = window.Farkle || {};
     this.winner = -1;
     this._resetTurn();
   }
+
+  Game.prototype._random = function () {
+    if (this.rngState === null || this.rngState === undefined) return Math.random();
+    var r = mulberryStep(this.rngState);
+    this.rngState = r.state;
+    return r.value;
+  };
+  Game.prototype._rollN = function (n) {
+    var a = [];
+    for (var i = 0; i < n; i++) a.push(Math.floor(this._random() * 6) + 1);
+    return a;
+  };
 
   Game.prototype._resetTurn = function () {
     this.dice = [];          // активні (вільні) кубики на столі
@@ -79,7 +99,7 @@ window.Farkle = window.Farkle || {};
   // Повертає { dice, farkle }.
   Game.prototype.rollFresh = function () {
     this._resetTurn();
-    this.dice = rollN(6);
+    this.dice = this._rollN(6);
     this.rolled = true;
     return { dice: this.dice.slice(), farkle: !scoring.hasAnyScore(this.dice) };
   };
@@ -129,9 +149,9 @@ window.Farkle = window.Farkle || {};
     var hotDice = remaining === 0;
     if (hotDice) {
       this.setAside = [];      // усі 6 використано — починаємо нову руку
-      this.dice = rollN(6);
+      this.dice = this._rollN(6);
     } else {
-      this.dice = rollN(remaining);
+      this.dice = this._rollN(remaining);
     }
     this.selected = [];
     this.rolled = true;
@@ -168,12 +188,22 @@ window.Farkle = window.Farkle || {};
   };
 
   // Перейти до наступного гравця (або завершити гру в кінці фінального кола).
+  // turnsUsed — скільки ходів уже зіграно (лічильник веде контролер);
+  // потрібен лише режимам із лімітом ходів (атака / щоденний виклик).
   // Повертає { gameOver, winner } — winner=-1 якщо гра триває.
-  Game.prototype.nextTurn = function () {
+  Game.prototype.nextTurn = function (turnsUsed) {
     this._resetTurn();
 
     if (this.mode === 'solo') {
-      // У соло гра завершується, коли гравець досяг цілі.
+      // Атака / щоденний виклик: гра закінчується після turnLimit ходів.
+      if (this.turnLimit > 0) {
+        if ((turnsUsed || 0) >= this.turnLimit) {
+          this.over = true; this.winner = 0;
+          return { gameOver: true, winner: 0 };
+        }
+        return { gameOver: false, winner: -1 };
+      }
+      // Класичне соло: гра завершується, коли гравець досяг цілі.
       if (this.players[0].score >= this.target) {
         this.over = true; this.winner = 0;
         return { gameOver: true, winner: 0 };
@@ -207,6 +237,11 @@ window.Farkle = window.Farkle || {};
   Game.prototype.serialize = function () {
     return {
       mode: this.mode,
+      variant: this.variant,
+      turnLimit: this.turnLimit,
+      dailyDate: this.dailyDate,
+      seed: this.seed,
+      rngState: this.rngState,
       target: this.target,
       openRule: this.openRule,
       openThreshold: this.openThreshold,
@@ -230,6 +265,12 @@ window.Farkle = window.Farkle || {};
     if (!s || !s.players || !s.players.length) return null;
     var g = Object.create(Game.prototype);
     g.mode = s.mode === 'solo' ? 'solo' : 'ai';
+    g.variant = (g.mode === 'solo' && (s.variant === 'attack' || s.variant === 'daily'))
+      ? s.variant : 'race';
+    g.turnLimit = g.variant === 'race' ? 0 : (Number(s.turnLimit) || 10);
+    g.dailyDate = typeof s.dailyDate === 'string' ? s.dailyDate : '';
+    g.seed = (typeof s.seed === 'number') ? (s.seed >>> 0) : null;
+    g.rngState = (typeof s.rngState === 'number') ? (s.rngState | 0) : g.seed;
     g.target = Number(s.target) || 10000;
     g.openRule = !!s.openRule;
     g.openThreshold = Number(s.openThreshold) || 500;

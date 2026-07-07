@@ -53,22 +53,39 @@ window.Farkle = window.Farkle || {};
   }
 
   // Рішення: банкувати чи кидати ще.
-  // params: { freeDiceAfter, turnTotal, currentScore, target, difficulty }
+  // params: { freeDiceAfter, turnTotal, currentScore, target, difficulty,
+  //           opponentScore?, finalRound? }
   //   freeDiceAfter — скільки кубиків довелося б перекидати (0 ⇒ гарячі кубики).
   function shouldBank(params) {
     var free = params.freeDiceAfter;
     var turnTotal = params.turnTotal;
+    var opp = (typeof params.opponentScore === 'number') ? params.opponentScore : null;
 
+    // Фінальне коло (суперник уже досяг цілі): банк, який не виграє гру, —
+    // гарантована поразка, тож банкуємо лише переможний рахунок (нічия = поразка).
+    if (params.finalRound && opp !== null) {
+      return params.currentScore + turnTotal > opp;
+    }
     // Якщо цей хід уже приносить перемогу — фіксуємо.
     if (params.currentScore + turnTotal >= params.target) return true;
     // Гарячі кубики: беремо свіжі 6 і продовжуємо.
     if (free === 0) return false;
 
+    // Контекст рахунку (normal/hard): суперник на фініші або великий розрив —
+    // ризикуємо більше; впевнено ведемо — банкуємо раніше.
+    var mult = 1;
+    if (opp !== null && params.difficulty !== 'easy') {
+      var lead = params.currentScore - opp;
+      if (opp >= params.target - 1500 && lead < 0) mult = 1.6;
+      else if (lead <= -2000) mult = 1.3;
+      else if (lead >= 2000) mult = 0.75;
+    }
+
     var p = PROFILES[params.difficulty] || PROFILES.normal;
-    if (free >= 4) return turnTotal >= p.d4;
-    if (free === 3) return turnTotal >= p.d3;
-    if (free === 2) return turnTotal >= p.d2;
-    if (free === 1) return turnTotal >= p.d1;
+    if (free >= 4) return turnTotal >= p.d4 * mult;
+    if (free === 3) return turnTotal >= p.d3 * mult;
+    if (free === 2) return turnTotal >= p.d2 * mult;
+    if (free === 1) return turnTotal >= p.d1 * mult;
     return true;
   }
 

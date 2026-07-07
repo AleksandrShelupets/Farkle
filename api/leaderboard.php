@@ -78,6 +78,8 @@ function new_player($name, $id) {
     'aiWins' => 0, 'aiLosses' => 0, 'aiGames' => 0,
     'soloBestTurns' => null, 'soloGames' => 0,
     'farkles' => 0, 'farklePoints' => 0,
+    'attackBest' => 0,
+    'dailyDate' => '', 'dailyScore' => 0,
     'created' => $t, 'updated' => $t
   );
 }
@@ -116,6 +118,9 @@ if ($action === 'list') {
       'soloGames' => (int)(isset($p['soloGames']) ? $p['soloGames'] : 0),
       'farkles' => (int)(isset($p['farkles']) ? $p['farkles'] : 0),
       'farklePoints' => (int)(isset($p['farklePoints']) ? $p['farklePoints'] : 0),
+      'attackBest' => (int)(isset($p['attackBest']) ? $p['attackBest'] : 0),
+      'dailyDate' => isset($p['dailyDate']) ? (string)$p['dailyDate'] : '',
+      'dailyScore' => (int)(isset($p['dailyScore']) ? $p['dailyScore'] : 0),
       'updated' => (int)(isset($p['updated']) ? $p['updated'] : 0)
     );
   }
@@ -171,6 +176,24 @@ if ($action === 'submit') {
   $p['soloGames']   = max((int)$p['soloGames'],   clamp_int(isset($s['soloGames']) ? $s['soloGames'] : 0, 0, $CAP));
   $p['farkles']     = max((int)$p['farkles'],     clamp_int(isset($s['farkles']) ? $s['farkles'] : 0, 0, $CAP));
   $p['farklePoints']= max((int)$p['farklePoints'],clamp_int(isset($s['farklePoints']) ? $s['farklePoints'] : 0, 0, $CAP));
+  $p['attackBest']  = max((int)(isset($p['attackBest']) ? $p['attackBest'] : 0),
+                          clamp_int(isset($s['attackBest']) ? $s['attackBest'] : 0, 0, $CAP));
+
+  // Щоденний виклик: результат прив'язаний до дати; новий день заміняє старий,
+  // у межах одного дня зберігаємо найкращий результат.
+  if (isset($s['dailyDate']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', (string)$s['dailyDate'])
+      && isset($s['dailyScore']) && (int)$s['dailyScore'] > 0) {
+    $dDate = (string)$s['dailyDate'];
+    $dScore = clamp_int($s['dailyScore'], 0, $CAP);
+    $curDate = isset($p['dailyDate']) ? (string)$p['dailyDate'] : '';
+    $curScore = (int)(isset($p['dailyScore']) ? $p['dailyScore'] : 0);
+    if ($dDate > $curDate) {          // ISO-дати порівнюються як рядки
+      $p['dailyDate'] = $dDate;
+      $p['dailyScore'] = $dScore;
+    } elseif ($dDate === $curDate) {
+      $p['dailyScore'] = max($curScore, $dScore);
+    }                                  // старіша дата — ігноруємо
+  }
 
   // соло-ходи — рекорд-мінімум
   if (isset($s['soloBestTurns']) && (int)$s['soloBestTurns'] > 0) {

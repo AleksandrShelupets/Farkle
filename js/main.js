@@ -14,15 +14,25 @@ window.Farkle = window.Farkle || {};
   var i18n = window.Farkle.i18n;
   function t(key, params) { return i18n.t(key, params); }
 
-  var APP_VERSION = '1.015';   // версія гри (показується у футері меню; бампай при релізі)
+  var APP_VERSION = '1.016';   // версія гри (показується у футері меню; бампай при релізі)
   var AI_DELAY = 750;          // мс між кроками ходу AI
   var FARKLE_PAUSE = 1200;
+  var ATTACK_TURNS = 10;       // ліміт ходів у режимах «атака» та «щоденний виклик»
+
+  // Ключі досягнень (тексти — в i18n: ach.<key>.name / ach.<key>.desc).
+  var ACHIEVEMENTS = ['firstWin', 'winHard', 'cleanWin', 'straight', 'threePairs',
+    'twoTriplets', 'sixKind', 'turn2000', 'doubleHot', 'daily1'];
 
   var game = null;
   var difficulty = 'normal';
   var turnsPlayed = 0;
   var timers = [];
   var settling = false;        // true у проміжку «дія завершена → наступний хід» (банк/Farkle-пауза)
+  var gameStats = null;        // підсумок поточної партії (для рекапу та досягнень)
+
+  function freshGameStats() {
+    return { biggestTurn: 0, farkles: 0, hotDice: 0, turnHot: 0 };
+  }
 
   function delay(ms, fn) { var id = setTimeout(fn, ms); timers.push(id); return id; }
   function clearTimers() {
@@ -33,12 +43,66 @@ window.Farkle = window.Farkle || {};
   function bestTurnsLabel() {
     return store.hasStat('solo.bestTurns') ? t('count.turns', { n: store.getStat('solo.bestTurns') }) : '—';
   }
+  function attackBestLabel() {
+    return store.hasStat('attack.bestScore') ? String(store.getStat('attack.bestScore')) : '—';
+  }
+  // Рекорд для табло поточного режиму (у щоденному виклику рекорд дня — в рейтингу).
+  function recordLabel() {
+    if (game && game.mode === 'solo' && game.variant === 'attack') return attackBestLabel();
+    return bestTurnsLabel();
+  }
+
+  // Локальна дата YYYY-MM-DD — визначає «сьогоднішній» виклик і його сід.
+  function todayStr() {
+    var d = new Date();
+    return d.getFullYear() + '-' +
+      ('0' + (d.getMonth() + 1)).slice(-2) + '-' +
+      ('0' + d.getDate()).slice(-2);
+  }
+  // FNV-1a: рядок → 32-бітний сід (однаковий для всіх гравців того самого дня).
+  function seedFromString(str) {
+    var h = 2166136261;
+    for (var i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return h >>> 0;
+  }
+
+  // ---------- Досягнення ----------
+  function award(key) {
+    if (!store.unlockAchievement(key)) return;
+    ui.log(t('ach.unlocked', { name: t('ach.' + key + '.name') }), 'good');
+    sound.hot();
+  }
+  // Перевірити відкладений набір людини на «трофейні» комбінації.
+  function checkComboAchievements(vals) {
+    var res = scoring.score(vals);
+    if (!res.valid) return;
+    for (var i = 0; i < res.combos.length; i++) {
+      var c = res.combos[i];
+      if (c.kind === 'straight') award('straight');
+      else if (c.kind === 'threePairs') award('threePairs');
+      else if (c.kind === 'twoTriplets') award('twoTriplets');
+      else if (c.kind === 'kind' && c.count === 6) award('sixKind');
+    }
+  }
+  function collectAchievements() {
+    return ACHIEVEMENTS.map(function (key) {
+      return {
+        name: t('ach.' + key + '.name'),
+        desc: t('ach.' + key + '.desc'),
+        earned: store.hasAchievement(key)
+      };
+    });
+  }
 
   // ---------- Збереження прогресу ----------
   // Записати поточний стан гри (для кнопки «Продовжити» після перезавантаження / меню).
   function persist() {
     if (!game) return;
-    store.saveGame({ v: 1, game: game.serialize(), difficulty: difficulty, turnsPlayed: turnsPlayed });
+    store.saveGame({ v: 1, game: game.serialize(), difficulty: difficulty,
+      turnsPlayed: turnsPlayed, recap: gameStats });
   }
   // Зберегти лише в «стабільному» стані: хід людини, що очікує вводу.
   // Хід AI не перезаписуємо — лишається чистий знімок зі старту його ходу (beginTurn),
@@ -53,13 +117,26 @@ window.Farkle = window.Farkle || {};
   }
 
   // ---------- Старт ----------
-  function startGame(mode) {
+  // variant (лише для mode==='solo'): 'race' (класика) | 'attack' | 'daily'.
+  function startGame(mode, variant) {
     clearTimers();
     var s = store.getSettings();
     difficulty = s.difficulty;
-    game = new Game({ mode: mode, target: s.target, openRule: s.openRule,
-      playerName: s.playerName || t('player.you'), aiName: t('player.computer') });
+    var opts = { mode: mode, target: s.target, openRule: s.openRule,
+      playerName: s.playerName || t('player.you'), aiName: t('player.computer') };
+    var limited = mode === 'solo' && (variant === 'attack' || variant === 'daily');
+    if (limited) {
+      opts.variant = variant;
+      opts.turnLimit = ATTACK_TURNS;
+      opts.openRule = false; // однакові правила для всіх (важливо для щоденного виклику)
+      if (variant === 'daily') {
+        opts.dailyDate = todayStr();
+        opts.seed = seedFromString('farkle-daily-' + opts.dailyDate);
+      }
+    }
+    game = new Game(opts);
     turnsPlayed = 0;
+    gameStats = freshGameStats();
     ui.clearLog();
     ui.showGame();
     ui.setLocked(false);
@@ -67,20 +144,25 @@ window.Farkle = window.Farkle || {};
     if (mode === 'ai') {
       var diffLabel = t('diff.' + difficulty);
       ui.log(t('log.newGameAI', { diff: diffLabel, target: s.target }), 'sys');
+    } else if (game.variant === 'attack') {
+      ui.log(t('log.attackMode', { turns: game.turnLimit, rec: attackBestLabel() }), 'sys');
+    } else if (game.variant === 'daily') {
+      ui.log(t('log.dailyMode', { date: game.dailyDate, turns: game.turnLimit }), 'sys');
     } else {
       ui.log(t('log.soloMode', { target: s.target, rec: bestTurnsLabel() }), 'sys');
     }
-    if (s.openRule) ui.log(t('log.openRule'), 'sys');
+    if (game.openRule) ui.log(t('log.openRule'), 'sys');
     beginTurn();
   }
 
   function render(extra) {
-    ui.renderGame(game, Object.assign({ highscore: bestTurnsLabel(), turns: turnsPlayed }, extra || {}));
+    ui.renderGame(game, Object.assign({ highscore: recordLabel(), turns: turnsPlayed }, extra || {}));
   }
 
   // ---------- Хід ----------
   function beginTurn() {
     turnsPlayed++;
+    if (gameStats) gameStats.turnHot = 0;
     runTurn();
   }
 
@@ -99,7 +181,7 @@ window.Farkle = window.Farkle || {};
   }
 
   function endTurn() {
-    var nt = game.nextTurn();
+    var nt = game.nextTurn(turnsPlayed);
     if (nt.gameOver) { handleGameOver(nt.winner); return; }
     beginTurn();
   }
@@ -128,7 +210,13 @@ window.Farkle = window.Farkle || {};
     if (res.error) return;
     sound.select();
     ui.log(t('log.setAsideReroll', { dice: diceStr(sel), banked: res.banked }));
-    if (res.hotDice) { sound.hot(); ui.log(t('log.hotHuman'), 'good'); }
+    checkComboAchievements(sel);
+    if (res.hotDice) {
+      sound.hot(); ui.log(t('log.hotHuman'), 'good');
+      gameStats.hotDice++;
+      gameStats.turnHot++;
+      if (gameStats.turnHot >= 2) award('doubleHot');
+    }
     sound.roll();
     ui.setLocked(true);
     ui.animateRoll(res.dice, function () {
@@ -147,8 +235,10 @@ window.Farkle = window.Farkle || {};
       }
       return;
     }
+    var sel = game.selectedValues();
     var res = game.commitAndBank();
     if (res.error) return;
+    checkComboAchievements(sel);
     afterBank(res);
   }
 
@@ -156,7 +246,11 @@ window.Farkle = window.Farkle || {};
     var isHuman = !game.isAITurn();
     ui.log(t('log.banked', { gained: res.gained, total: res.newTotal }), 'good');
     sound.bank();
-    if (isHuman) store.recordMax('bestSingleTurn', res.gained);
+    if (isHuman) {
+      store.recordMax('bestSingleTurn', res.gained);
+      if (res.gained > gameStats.biggestTurn) gameStats.biggestTurn = res.gained;
+      if (res.gained >= 2000) award('turn2000');
+    }
     if (res.won && game.mode === 'ai') {
       game.triggerFinalRound();
       ui.log(t('log.reachedTarget', { name: game.currentPlayer().name }), 'sys');
@@ -174,6 +268,7 @@ window.Farkle = window.Farkle || {};
     if (!game.isAITurn()) {
       store.incStat('farkles');
       if (lost > 0) store.incStat('farklePoints', lost);
+      gameStats.farkles++;
     }
     settling = true;
     delay(FARKLE_PAUSE, endTurn);
@@ -216,7 +311,9 @@ window.Farkle = window.Farkle || {};
       turnTotal: turnTotalIfCommit,
       currentScore: game.currentPlayer().score,
       target: game.target,
-      difficulty: difficulty
+      difficulty: difficulty,
+      opponentScore: game.players[1 - game.current].score,
+      finalRound: game.inFinalRound()
     });
     // Правило «зайти з 500»: якщо банк зараз недозволений — кидаємо далі.
     if (bank && !game.canBank()) bank = false;
@@ -254,7 +351,32 @@ window.Farkle = window.Farkle || {};
     clearSave();              // гра завершена — продовжувати нічого
     ui.setLocked(true);
     render();
-    if (game.mode === 'solo') {
+    // Рекап партії — другий рядок на екрані перемоги.
+    var recap = t('recap.line', {
+      big: gameStats.biggestTurn, f: gameStats.farkles, hot: gameStats.hotDice
+    });
+    var submitExtra = null;
+
+    if (game.mode === 'solo' && game.turnLimit > 0) {
+      // Атака / щоденний виклик: результат — очки за фіксовану кількість ходів.
+      var isDaily = game.variant === 'daily';
+      var score = game.players[0].score;
+      store.incStat(isDaily ? 'daily.games' : 'attack.games');
+      ui.log(t('log.attackDone', { score: score, turns: game.turnLimit }), 'good');
+      if (isDaily) {
+        award('daily1');
+        submitExtra = { dailyDate: game.dailyDate, dailyScore: score };
+      } else {
+        var better = store.recordMax('attack.bestScore', score);
+        ui.log(better ? t('log.attackRecord', { score: score })
+          : t('log.attackRecordStays', { rec: store.getStat('attack.bestScore') }), better ? 'good' : 'sys');
+      }
+      sound.win();
+      ui.showVictory({
+        banner: isDaily ? t('victory.daily.banner') : t('victory.attack.banner'),
+        detail: t('victory.attack.detail', { score: score, turns: game.turnLimit }) + '\n' + recap
+      });
+    } else if (game.mode === 'solo') {
       store.incStat('solo.games');
       ui.log(t('log.soloDone', { target: game.target, turns: turnsPlayed }), 'good');
       var improved = store.recordMin('solo.bestTurns', turnsPlayed);
@@ -263,18 +385,22 @@ window.Farkle = window.Farkle || {};
       ui.setMenuHighscore(bestTurnsLabel());
       sound.win();
       ui.showVictory({ banner: t('victory.solo.banner'),
-        detail: t('victory.solo.detail', { score: game.players[0].score, turns: turnsPlayed }) });
+        detail: t('victory.solo.detail', { score: game.players[0].score, turns: turnsPlayed }) + '\n' + recap });
     } else {
       store.incStat('ai.games');
       var human = game.players[0], aiP = game.players[1];
-      if (winner === 0) { store.incStat('ai.wins'); sound.win(); }
-      else store.incStat('ai.losses');
+      if (winner === 0) {
+        store.incStat('ai.wins'); sound.win();
+        award('firstWin');
+        if (difficulty === 'hard') award('winHard');
+        if (gameStats.farkles === 0) award('cleanWin');
+      } else store.incStat('ai.losses');
       var w = game.players[winner], l = game.players[1 - winner];
       ui.log(t('log.winner', { name: w.name, ws: w.score, ls: l.score }), 'good');
       ui.showVictory({ banner: winner === 0 ? t('victory.win.banner') : t('victory.lose.banner'),
-        detail: t('victory.ai.detail', { human: human.score, ai: aiP.score }) });
+        detail: t('victory.ai.detail', { human: human.score, ai: aiP.score }) + '\n' + recap });
     }
-    submitStats(); // надіслати показники в спільний рейтинг (якщо задано ім'я)
+    submitStats(submitExtra); // надіслати показники в спільний рейтинг (якщо задано ім'я)
     ui.log(t('log.pressEnter'), 'sys');
   }
 
@@ -296,6 +422,13 @@ window.Farkle = window.Farkle || {};
     game = restored;
     difficulty = saved.difficulty || store.getSettings().difficulty;
     turnsPlayed = saved.turnsPlayed || 0;
+    var r = saved.recap;
+    gameStats = freshGameStats();
+    if (r && typeof r === 'object') {
+      gameStats.biggestTurn = Number(r.biggestTurn) || 0;
+      gameStats.farkles = Number(r.farkles) || 0;
+      gameStats.hotDice = Number(r.hotDice) || 0;
+    }
 
     // Захист: якщо збережено «застряглий» хід людини (кидок без очок) — почати хід заново.
     if (!game.isAITurn() && game.rolled && !scoring.hasAnyScore(game.dice)) {
@@ -314,7 +447,7 @@ window.Farkle = window.Farkle || {};
 
   function onEnter() {
     if (!game) return;
-    if (game.over) { startGame(game.mode); return; }
+    if (game.over) { startGame(game.mode, game.variant); return; }
     if (game.isAITurn()) return;
     if (!game.rolled) humanRoll();
     else if (game.canCommit()) humanReroll();
@@ -395,10 +528,11 @@ window.Farkle = window.Farkle || {};
     });
   }
 
-  function submitStats() {
+  // extra — додаткові поля разового результату (щоденний виклик: dailyDate/dailyScore).
+  function submitStats(extra) {
     var name = store.getSettings().playerName;
     if (!name) return; // анонім — не надсилаємо
-    net.submit(store.getClientId(), name, {
+    var stats = {
       bestSingleTurn: store.getStat('bestSingleTurn'),
       aiWins: store.getStat('ai.wins'),
       aiLosses: store.getStat('ai.losses'),
@@ -406,8 +540,11 @@ window.Farkle = window.Farkle || {};
       soloBestTurns: store.hasStat('solo.bestTurns') ? store.getStat('solo.bestTurns') : 0,
       soloGames: store.getStat('solo.games'),
       farkles: store.getStat('farkles'),
-      farklePoints: store.getStat('farklePoints')
-    });
+      farklePoints: store.getStat('farklePoints'),
+      attackBest: store.getStat('attack.bestScore')
+    };
+    if (extra) for (var k in extra) if (extra.hasOwnProperty(k)) stats[k] = extra[k];
+    net.submit(store.getClientId(), name, stats);
   }
 
   function fetchLeaderboard() {
@@ -444,7 +581,10 @@ window.Farkle = window.Farkle || {};
       { label: t('stats.farklePoints'), value: store.getStat('farklePoints') },
       { label: t('stats.aiWins'), value: store.getStat('ai.wins') },
       { label: t('stats.aiLosses'), value: store.getStat('ai.losses') },
-      { label: t('stats.aiGames'), value: store.getStat('ai.games') }
+      { label: t('stats.aiGames'), value: store.getStat('ai.games') },
+      { label: t('stats.attackBest'), value: store.hasStat('attack.bestScore') ? store.getStat('attack.bestScore') : '—' },
+      { label: t('stats.attackGames'), value: store.getStat('attack.games') },
+      { label: t('stats.dailyGames'), value: store.getStat('daily.games') }
     ];
   }
 
@@ -453,6 +593,8 @@ window.Farkle = window.Farkle || {};
       onContinue: continueGame,
       onPlayAI: function () { startGame('ai'); },
       onPlaySolo: function () { startGame('solo'); },
+      onPlayAttack: function () { startGame('solo', 'attack'); },
+      onPlayDaily: function () { startGame('solo', 'daily'); },
       onMenu: gotoMenu,
       onRoll: humanRoll,
       onReroll: humanReroll,
@@ -460,9 +602,10 @@ window.Farkle = window.Farkle || {};
       onToggle: onToggle,
       onEnter: onEnter,
       onAutoSelect: onAutoSelect,
-      onPlayAgain: function () { if (game) startGame(game.mode); },
+      onPlayAgain: function () { if (game) startGame(game.mode, game.variant); },
       onOpenSettings: function () { ui.renderSettings(store.getSettings()); },
       onOpenStats: function () { ui.renderStats(collectStats()); },
+      onOpenAchievements: function () { ui.renderAchievements(collectAchievements()); },
       onStatsReset: function () { store.resetStats(); ui.renderStats(collectStats()); ui.setMenuHighscore(bestTurnsLabel()); },
       onSettingChange: onSettingChange,
       onToggleSound: onToggleSound,

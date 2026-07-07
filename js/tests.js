@@ -69,6 +69,45 @@ window.Farkle = window.Farkle || {};
     check('ризик 6 кубиків', scoring.farkleChance(6), 0.023);
     check('ризик 0', scoring.farkleChance(0), 0);
 
+    // Ідентифікатори комбінацій (для підказки та досягнень)
+    function comboKinds(dice) {
+      return scoring.score(dice).combos.map(function (c) { return c.kind; }).join(',');
+    }
+    check('комбо: стріт', comboKinds([1, 2, 3, 4, 5, 6]), 'straight');
+    check('комбо: три пари', comboKinds([2, 2, 4, 4, 6, 6]), 'threePairs');
+    check('комбо: дві трійки', comboKinds([1, 1, 1, 2, 2, 2]), 'twoTriplets');
+    check('комбо: шість однакових', comboKinds([4, 4, 4, 4, 4, 4]), 'kind');
+    check('комбо: шість однакових count', scoring.score([4, 4, 4, 4, 4, 4]).combos[0].count, 6);
+    check('комбо: трійка + одиночні', comboKinds([2, 2, 2, 1, 5]), 'ones,kind,fives');
+    check('комбо: порожньо', comboKinds([]), '');
+
+    // AI: рішення у фінальному колі (банк лише переможного рахунку)
+    var ai = window.Farkle.ai;
+    function finalBank(turnTotal) {
+      return ai.shouldBank({ freeDiceAfter: 3, turnTotal: turnTotal, currentScore: 8000,
+        target: 10000, difficulty: 'normal', opponentScore: 10000, finalRound: true });
+    }
+    check('AI фінал: не банкує програшне', finalBank(400), false);
+    check('AI фінал: не банкує нічию', finalBank(2000), false);
+    check('AI фінал: банкує переможне', finalBank(2100), true);
+
+    // Game: сідований ГПВЧ (щоденний виклик) — однакові кидки за однакового сіду
+    var Game = window.Farkle.Game;
+    var g1 = new Game({ mode: 'solo', variant: 'daily', seed: 123456, dailyDate: '2026-01-01' });
+    var g2 = new Game({ mode: 'solo', variant: 'daily', seed: 123456, dailyDate: '2026-01-01' });
+    check('сід: однаковий перший кидок', g1.rollFresh().dice.join(''), g2.rollFresh().dice.join(''));
+    var g3 = Game.fromState(g1.serialize());
+    check('сід: відновлення продовжує послідовність',
+      g1._rollN(6).join(''), g3._rollN(6).join(''));
+
+    // Game: ліміт ходів у режимі «атака»
+    var ga = new Game({ mode: 'solo', variant: 'attack', turnLimit: 10 });
+    check('атака: триває до ліміту', ga.nextTurn(9).gameOver, false);
+    check('атака: кінець після ліміту', ga.nextTurn(10).gameOver, true);
+    var gr = new Game({ mode: 'solo' });
+    gr.players[0].score = 10000;
+    check('соло-класика: кінець на цілі', gr.nextTurn(5).gameOver, true);
+
     var summary = (fail === 0)
       ? '✓ Самотест пройдено: ' + pass + '/' + (pass + fail) + ' OK.'
       : '✗ Самотест: ' + pass + ' OK, ' + fail + ' помилок (див. консоль браузера).';

@@ -370,6 +370,22 @@ button:hover:not(:disabled) kbd { background: var(--bg); color: var(--fg); }
 .lb-table td:last-child, .lb-table th:last-child { text-align: right; white-space: nowrap; }
 .lb-table tr.lb-me td { color: var(--amber); font-weight: bold; }
 
+/* ---------- Досягнення ---------- */
+.ach-list { margin: 12px 0; max-height: 55vh; overflow-y: auto; }
+.ach-row {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--border);
+  opacity: 0.55;
+}
+.ach-row.earned { opacity: 1; }
+.ach-mark { flex: 0 0 2ch; text-align: center; }
+.ach-name { color: var(--fg); font-weight: bold; }
+.ach-row.earned .ach-name { color: var(--amber); }
+.ach-desc { color: var(--fg-dim); font-size: 13px; }
+
 /* ---------- Екран перемоги ---------- */
 .victory-box { text-align: center; }
 /* Банер — рамка через CSS (не псевдографіка), щоб не «розсипалась» на будь-якому шрифті. */
@@ -388,7 +404,7 @@ button:hover:not(:disabled) kbd { background: var(--bg); color: var(--fg); }
   border: 3px double var(--good);
   box-shadow: 0 0 12px rgba(125, 255, 161, 0.18);
 }
-#victory-detail { color: var(--fg); margin-bottom: 16px; }
+#victory-detail { color: var(--fg); margin-bottom: 16px; white-space: pre-line; }
 .victory-actions { display: flex; gap: 10px; justify-content: center; }
 .victory-actions button { text-align: center; }
 

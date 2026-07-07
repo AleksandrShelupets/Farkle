@@ -19,7 +19,8 @@ window.Farkle = window.Farkle || {};
   // Перелік ключів статистики (для скидання та обходу).
   var STAT_KEYS = [
     'solo.bestTurns', 'solo.games', 'bestSingleTurn',
-    'farkles', 'farklePoints', 'ai.wins', 'ai.losses', 'ai.games'
+    'farkles', 'farklePoints', 'ai.wins', 'ai.losses', 'ai.games',
+    'attack.bestScore', 'attack.games', 'daily.games'
   ];
 
   function readRaw(key) {
@@ -77,6 +78,24 @@ window.Farkle = window.Farkle || {};
     for (var i = 0; i < STAT_KEYS.length; i++) removeRaw('stat.' + STAT_KEYS[i]);
   }
 
+  // ---- Досягнення (трофеї не скидаються разом зі статистикою) ----
+  var ACH_KEY = 'achievements';
+  function getAchievements() {
+    var raw = readRaw(ACH_KEY);
+    if (!raw) return {};
+    try { var o = JSON.parse(raw); return (o && typeof o === 'object') ? o : {}; }
+    catch (e) { return {}; }
+  }
+  function hasAchievement(key) { return !!getAchievements()[key]; }
+  // Повертає true, якщо досягнення щойно відкрито (раніше його не було).
+  function unlockAchievement(key) {
+    var all = getAchievements();
+    if (all[key]) return false;
+    all[key] = 1;
+    try { writeRaw(ACH_KEY, JSON.stringify(all)); } catch (e) {}
+    return true;
+  }
+
   // ---- Збережена гра (для кнопки «Продовжити») ----
   var GAME_KEY = 'savedGame';
   function saveGame(obj) {
@@ -122,6 +141,9 @@ window.Farkle = window.Farkle || {};
     recordMin: recordMin,
     recordMax: recordMax,
     resetStats: resetStats,
+    getAchievements: getAchievements,
+    hasAchievement: hasAchievement,
+    unlockAchievement: unlockAchievement,
     saveGame: saveGame,
     loadGame: loadGame,
     clearGame: clearGame,

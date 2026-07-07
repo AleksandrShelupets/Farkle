@@ -176,7 +176,60 @@ window.Farkle = window.Farkle || {};
       'lb.colTurns': 'Ходів',
 
       'victory.playAgain': 'Нова гра <kbd>⏎</kbd>',
-      'victory.menu': 'Меню <kbd>Esc</kbd>'
+      'victory.menu': 'Меню <kbd>Esc</kbd>',
+
+      // Нові режими (атака / щоденний виклик)
+      'menu.playAttack': 'Соло: атака (10 ходів)',
+      'menu.playDaily': 'Щоденний виклик',
+      'game.turnCountOf': 'Хід: {n}/{m}',
+      'game.attackLabel': 'Атака: {m} ходів',
+      'game.dailyLabel': 'Виклик дня: {m} ходів',
+      'log.attackMode': 'Режим «Атака»: набери якнайбільше очок за {turns} ходів. Рекорд: {rec}.',
+      'log.dailyMode': 'Щоденний виклик {date}: {turns} ходів, кубики дня однакові для всіх гравців.',
+      'log.attackDone': '🏁 Фініш! {score} очок за {turns} ходів.',
+      'log.attackRecord': '🏆 Новий рекорд атаки: {score}!',
+      'log.attackRecordStays': 'Рекорд атаки лишається: {rec}.',
+      'victory.attack.banner': 'ФІНІШ',
+      'victory.attack.detail': 'Результат: {score} очок за {turns} ходів.',
+      'victory.daily.banner': 'ВИКЛИК ДНЯ ЗАВЕРШЕНО',
+      'recap.line': 'Найбільший хід: {big} · Ваші Farkle: {f} · Гарячі кубики: {hot}',
+      'stats.attackBest': 'Атака — рекорд (очки)',
+      'stats.attackGames': 'Атака — ігор',
+      'stats.dailyGames': 'Щоденний виклик — ігор',
+      'lb.tab.attack': 'Атака',
+      'lb.tab.daily': 'Виклик дня',
+
+      // Назви комбінацій у підказці
+      'hint.combo': '✓ {name}! +{p} очок.',
+      'cname.straight': 'СТРІТ 1-6',
+      'cname.threePairs': 'ТРИ ПАРИ',
+      'cname.twoTriplets': 'ДВІ ТРІЙКИ',
+      'cname.kind': '{n}×[{f}]',
+
+      // Досягнення
+      'menu.achievements': 'Досягнення',
+      'ach.title': 'Досягнення',
+      'ach.unlocked': '🏆 Досягнення відкрито: {name}',
+      'ach.firstWin.name': 'Перша перемога',
+      'ach.firstWin.desc': 'Виграйте партію проти комп’ютера.',
+      'ach.winHard.name': 'Гросмейстер',
+      'ach.winHard.desc': 'Переможіть комп’ютера на складності «Складно».',
+      'ach.cleanWin.name': 'Чиста гра',
+      'ach.cleanWin.desc': 'Виграйте у комп’ютера, не вибивши жодного Farkle.',
+      'ach.straight.name': 'Стріт!',
+      'ach.straight.desc': 'Відкладіть стріт 1-2-3-4-5-6.',
+      'ach.threePairs.name': 'Три пари',
+      'ach.threePairs.desc': 'Відкладіть три пари одним кидком.',
+      'ach.twoTriplets.name': 'Дві трійки',
+      'ach.twoTriplets.desc': 'Відкладіть дві трійки одним кидком.',
+      'ach.sixKind.name': 'Шість в одному',
+      'ach.sixKind.desc': 'Відкладіть шість однакових кубиків.',
+      'ach.turn2000.name': 'Великий куш',
+      'ach.turn2000.desc': 'Забанкуйте 2000+ очок за один хід.',
+      'ach.doubleHot.name': 'Подвійний вогонь',
+      'ach.doubleHot.desc': 'Двічі спіймайте гарячі кубики за один хід.',
+      'ach.daily1.name': 'Виклик прийнято',
+      'ach.daily1.desc': 'Завершіть щоденний виклик.'
     },
 
     en: {
@@ -349,7 +402,60 @@ window.Farkle = window.Farkle || {};
       'lb.colTurns': 'Turns',
 
       'victory.playAgain': 'New game <kbd>⏎</kbd>',
-      'victory.menu': 'Menu <kbd>Esc</kbd>'
+      'victory.menu': 'Menu <kbd>Esc</kbd>',
+
+      // New modes (attack / daily challenge)
+      'menu.playAttack': 'Solo: attack (10 turns)',
+      'menu.playDaily': 'Daily challenge',
+      'game.turnCountOf': 'Turn: {n}/{m}',
+      'game.attackLabel': 'Attack: {m} turns',
+      'game.dailyLabel': 'Daily challenge: {m} turns',
+      'log.attackMode': 'Attack mode: score as much as you can in {turns} turns. Record: {rec}.',
+      'log.dailyMode': 'Daily challenge {date}: {turns} turns, everyone gets the same dice today.',
+      'log.attackDone': '🏁 Finished! {score} points in {turns} turns.',
+      'log.attackRecord': '🏆 New attack record: {score}!',
+      'log.attackRecordStays': 'Attack record stays: {rec}.',
+      'victory.attack.banner': 'FINISH',
+      'victory.attack.detail': 'Result: {score} points in {turns} turns.',
+      'victory.daily.banner': 'DAILY CHALLENGE DONE',
+      'recap.line': 'Biggest turn: {big} · Your Farkles: {f} · Hot dice: {hot}',
+      'stats.attackBest': 'Attack — record (points)',
+      'stats.attackGames': 'Attack — games',
+      'stats.dailyGames': 'Daily challenge — games',
+      'lb.tab.attack': 'Attack',
+      'lb.tab.daily': 'Daily',
+
+      // Combo names in the hint
+      'hint.combo': '✓ {name}! +{p} points.',
+      'cname.straight': 'STRAIGHT 1-6',
+      'cname.threePairs': 'THREE PAIRS',
+      'cname.twoTriplets': 'TWO TRIPLETS',
+      'cname.kind': '{n}×[{f}]',
+
+      // Achievements
+      'menu.achievements': 'Achievements',
+      'ach.title': 'Achievements',
+      'ach.unlocked': '🏆 Achievement unlocked: {name}',
+      'ach.firstWin.name': 'First victory',
+      'ach.firstWin.desc': 'Win a game against the computer.',
+      'ach.winHard.name': 'Grandmaster',
+      'ach.winHard.desc': 'Beat the computer on Hard difficulty.',
+      'ach.cleanWin.name': 'Clean sheet',
+      'ach.cleanWin.desc': 'Beat the computer without a single Farkle.',
+      'ach.straight.name': 'Straight!',
+      'ach.straight.desc': 'Set aside a 1-2-3-4-5-6 straight.',
+      'ach.threePairs.name': 'Three pairs',
+      'ach.threePairs.desc': 'Set aside three pairs in one roll.',
+      'ach.twoTriplets.name': 'Two triplets',
+      'ach.twoTriplets.desc': 'Set aside two triplets in one roll.',
+      'ach.sixKind.name': 'Six of a kind',
+      'ach.sixKind.desc': 'Set aside six identical dice.',
+      'ach.turn2000.name': 'Jackpot',
+      'ach.turn2000.desc': 'Bank 2000+ points in a single turn.',
+      'ach.doubleHot.name': 'Double fire',
+      'ach.doubleHot.desc': 'Hit hot dice twice in one turn.',
+      'ach.daily1.name': 'Challenge accepted',
+      'ach.daily1.desc': 'Finish a daily challenge.'
     }
   };
 

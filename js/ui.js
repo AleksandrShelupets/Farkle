@@ -76,12 +76,16 @@ window.Farkle = window.Farkle || {};
       case 'continue': call('onContinue'); break;
       case 'play-ai': call('onPlayAI'); break;
       case 'play-solo': call('onPlaySolo'); break;
+      case 'play-attack': call('onPlayAttack'); break;
+      case 'play-daily': call('onPlayDaily'); break;
       case 'rules': openModal('rules-modal'); break;
       case 'rules-close': closeModal('rules-modal'); break;
       case 'settings': call('onOpenSettings'); break;
       case 'settings-close': closeModal('settings-modal'); break;
       case 'stats': call('onOpenStats'); break;
       case 'stats-close': closeModal('stats-modal'); break;
+      case 'achievements': call('onOpenAchievements'); break;
+      case 'ach-close': closeModal('ach-modal'); break;
       case 'stats-reset': openModal('confirm-modal'); break;
       case 'confirm-yes': closeModal('confirm-modal'); call('onStatsReset'); break;
       case 'confirm-no': closeModal('confirm-modal'); break;
@@ -107,7 +111,7 @@ window.Farkle = window.Farkle || {};
   }
 
   function topModal() {
-    var ids = ['confirm-modal', 'victory-modal', 'settings-modal', 'stats-modal', 'leaderboard-modal', 'rules-modal'];
+    var ids = ['confirm-modal', 'victory-modal', 'settings-modal', 'stats-modal', 'ach-modal', 'leaderboard-modal', 'rules-modal'];
     for (var i = 0; i < ids.length; i++) {
       var m = $(ids[i]);
       if (m && !m.classList.contains('hidden')) return ids[i];
@@ -156,7 +160,7 @@ window.Farkle = window.Farkle || {};
 
   // ---- Екрани та модалки ----
   function closeAllModals() {
-    ['confirm-modal', 'rules-modal', 'settings-modal', 'stats-modal', 'leaderboard-modal', 'victory-modal'].forEach(closeModal);
+    ['confirm-modal', 'rules-modal', 'settings-modal', 'stats-modal', 'ach-modal', 'leaderboard-modal', 'victory-modal'].forEach(closeModal);
   }
   function showMenu() {
     cancelRoll();
@@ -260,7 +264,13 @@ window.Farkle = window.Farkle || {};
   // ---- Рендер гри ----
   function renderGame(game, opts) {
     opts = opts || {};
-    el.target.textContent = t('game.targetLabel', { n: game.target });
+    if (game.mode === 'solo' && game.turnLimit > 0) {
+      el.target.textContent = game.variant === 'daily'
+        ? t('game.dailyLabel', { m: game.turnLimit })
+        : t('game.attackLabel', { m: game.turnLimit });
+    } else {
+      el.target.textContent = t('game.targetLabel', { n: game.target });
+    }
 
     // Табло.
     el.scoreboard.innerHTML = '';
@@ -278,7 +288,7 @@ window.Farkle = window.Farkle || {};
       }
       el.scoreboard.appendChild(d);
     }
-    if (game.mode === 'solo') {
+    if (game.mode === 'solo' && game.variant !== 'daily') { // рекорд дня живе в рейтингу
       var hs = document.createElement('div');
       hs.className = 'player highscore';
       hs.textContent = t('game.record', { v: opts.highscore || '—' });
@@ -289,7 +299,11 @@ window.Farkle = window.Farkle || {};
 
     // Інфо про хід.
     var parts = [t('game.turnPoints', { n: game.turnTotal() }), t('game.freeDice', { n: game.dice.length })];
-    if (game.mode === 'solo' && opts.turns) parts.push(t('game.turnCount', { n: opts.turns }));
+    if (game.mode === 'solo' && opts.turns) {
+      parts.push(game.turnLimit > 0
+        ? t('game.turnCountOf', { n: opts.turns, m: game.turnLimit })
+        : t('game.turnCount', { n: opts.turns }));
+    }
     if (game.inFinalRound()) parts.push(t('game.finalRound'));
     el.turnInfo.textContent = parts.join('   │   ');
 
@@ -335,6 +349,21 @@ window.Farkle = window.Farkle || {};
     setBtn(el.autoBtn, human && game.rolled && Object.keys(scorable).length > 0);
   }
 
+  // Назви «трофейних» комбінацій у виборі (спецкомбінації та ≥3 однакових);
+  // поодинокі 1/5 не називаємо. Порожній рядок ⇒ нічого особливого.
+  function comboLabel(info) {
+    var names = [];
+    var combos = info.combos || [];
+    for (var i = 0; i < combos.length; i++) {
+      var c = combos[i];
+      if (c.kind === 'straight') names.push(t('cname.straight'));
+      else if (c.kind === 'threePairs') names.push(t('cname.threePairs'));
+      else if (c.kind === 'twoTriplets') names.push(t('cname.twoTriplets'));
+      else if (c.kind === 'kind') names.push(t('cname.kind', { n: c.count, f: c.face }));
+    }
+    return names.join(' + ');
+  }
+
   function renderHint(game, farkleNow) {
     var info = game.selectionInfo();
     if (farkleNow) {
@@ -347,7 +376,10 @@ window.Farkle = window.Farkle || {};
       el.hint.textContent = t('hint.openRule', { p: info.points, th: game.openThreshold, cur: game.turnTotal() });
       el.hint.className = 'hint';
     } else if (info.valid) {
-      el.hint.textContent = t('hint.valid', { p: info.points });
+      var name = comboLabel(info);
+      el.hint.textContent = name
+        ? t('hint.combo', { name: name, p: info.points })
+        : t('hint.valid', { p: info.points });
       el.hint.className = 'hint good';
     } else {
       el.hint.textContent = t('hint.invalid');
@@ -455,6 +487,32 @@ window.Farkle = window.Farkle || {};
     openModal('stats-modal');
   }
 
+  // ---- Досягнення ----
+  function renderAchievements(rows) {
+    var box = $('ach-list');
+    if (!box) return;
+    box.innerHTML = '';
+    for (var i = 0; i < rows.length; i++) {
+      var row = document.createElement('div');
+      row.className = 'ach-row' + (rows[i].earned ? ' earned' : '');
+      var mark = document.createElement('span');
+      mark.className = 'ach-mark';
+      mark.textContent = rows[i].earned ? '🏆' : '—';
+      var body = document.createElement('div');
+      body.className = 'ach-body';
+      var nm = document.createElement('div');
+      nm.className = 'ach-name';
+      nm.textContent = rows[i].name;
+      var ds = document.createElement('div');
+      ds.className = 'ach-desc';
+      ds.textContent = rows[i].desc;
+      body.appendChild(nm); body.appendChild(ds);
+      row.appendChild(mark); row.appendChild(body);
+      box.appendChild(row);
+    }
+    openModal('ach-modal');
+  }
+
   // ---- Екран перемоги ----
   function showVictory(v) {
     var b = $('victory-banner'), det = $('victory-detail');
@@ -473,6 +531,13 @@ window.Farkle = window.Farkle || {};
   }
 
   // ---- Рейтинг ----
+  // Локальна дата YYYY-MM-DD — та сама формула, що й для сіду щоденного виклику (main.js).
+  function localToday() {
+    var d = new Date();
+    return d.getFullYear() + '-' +
+      ('0' + (d.getMonth() + 1)).slice(-2) + '-' +
+      ('0' + d.getDate()).slice(-2);
+  }
   function lbMsg(text) {
     var d = document.createElement('div');
     d.className = 'lb-msg';
@@ -523,6 +588,17 @@ window.Farkle = window.Farkle || {};
       list = list.filter(function (p) { return (p.bestSingleTurn || 0) > 0; });
       list.sort(function (a, b) { return (b.bestSingleTurn || 0) - (a.bestSingleTurn || 0); });
       valFn = function (p) { return String(p.bestSingleTurn || 0); };
+    } else if (lbTab === 'attack') {
+      label = t('lb.colPoints');
+      list = list.filter(function (p) { return (p.attackBest || 0) > 0; });
+      list.sort(function (a, b) { return (b.attackBest || 0) - (a.attackBest || 0); });
+      valFn = function (p) { return String(p.attackBest || 0); };
+    } else if (lbTab === 'daily') {
+      label = t('lb.colPoints');
+      var today = localToday();
+      list = list.filter(function (p) { return p.dailyDate === today && (p.dailyScore || 0) > 0; });
+      list.sort(function (a, b) { return (b.dailyScore || 0) - (a.dailyScore || 0); });
+      valFn = function (p) { return String(p.dailyScore || 0); };
     } else if (lbTab === 'solo') {
       label = t('lb.colTurns');
       list = list.filter(function (p) { return p.soloBestTurns != null; });
@@ -588,6 +664,7 @@ window.Farkle = window.Farkle || {};
     setSoundButton: setSoundButton,
     renderSettings: renderSettings,
     renderStats: renderStats,
+    renderAchievements: renderAchievements,
     showVictory: showVictory
   };
 })();

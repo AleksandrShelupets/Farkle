@@ -15,7 +15,7 @@
   <meta name="theme-color" content="#050805" />
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="css/styles.css?v=16" />
+  <link rel="stylesheet" href="css/styles.css?v=17" />
 </head>
 <body>
   <div id="app">
@@ -34,8 +34,11 @@
         <button id="btn-continue" data-action="continue" class="hidden" data-i18n="menu.continue">▸ Продовжити гру</button>
         <button data-action="play-ai" data-i18n="menu.playAI">Грати проти комп’ютера</button>
         <button data-action="play-solo" data-i18n="menu.playSolo">Соло (рекорд)</button>
+        <button data-action="play-attack" data-i18n="menu.playAttack">Соло: атака (10 ходів)</button>
+        <button data-action="play-daily" data-i18n="menu.playDaily">Щоденний виклик</button>
         <button data-action="settings" data-i18n="menu.settings">Налаштування</button>
         <button data-action="stats" data-i18n="menu.stats">Статистика</button>
+        <button data-action="achievements" data-i18n="menu.achievements">Досягнення</button>
         <button data-action="leaderboard" data-i18n="menu.leaderboard">Рейтинг</button>
         <button data-action="rules" data-i18n="menu.rules">Правила</button>
       </div>
@@ -159,6 +162,15 @@
       </div>
     </div>
 
+    <!-- ============ ДОСЯГНЕННЯ ============ -->
+    <div id="ach-modal" class="modal hidden">
+      <div class="modal-box">
+        <h2 data-i18n="ach.title">Досягнення</h2>
+        <div id="ach-list" class="ach-list"></div>
+        <button data-action="ach-close" data-i18n="modal.close">[ Закрити ]</button>
+      </div>
+    </div>
+
     <!-- ============ РЕЙТИНГ ============ -->
     <div id="leaderboard-modal" class="modal hidden">
       <div class="modal-box">
@@ -167,6 +179,8 @@
           <button class="lb-tab active" data-action="lb-tab" data-lb="ai" data-i18n="lb.tab.ai">Перемоги (AI)</button>
           <button class="lb-tab" data-action="lb-tab" data-lb="turn" data-i18n="lb.tab.turn">Найкращий хід</button>
           <button class="lb-tab" data-action="lb-tab" data-lb="solo" data-i18n="lb.tab.solo">Соло (ходів)</button>
+          <button class="lb-tab" data-action="lb-tab" data-lb="attack" data-i18n="lb.tab.attack">Атака</button>
+          <button class="lb-tab" data-action="lb-tab" data-lb="daily" data-i18n="lb.tab.daily">Виклик дня</button>
         </div>
         <div id="lb-body" class="lb-body"></div>
         <div class="modal-actions">
@@ -208,15 +222,15 @@
   <!-- Класичні скрипти у порядку залежностей (без ES-модулів — працює на file://) -->
   <!-- ?v=N — версія складання проти кешу. Після правки будь-якого js/css підніми число
        тут (на всіх тегах) і VERSION у sw.js — браузер підтягне свіже. -->
-  <script src="js/scoring.js?v=16"></script>
-  <script src="js/sound.js?v=16"></script>
-  <script src="js/store.js?v=16"></script>
-  <script src="js/i18n.js?v=16"></script>
-  <script src="js/net.js?v=16"></script>
-  <script src="js/ai.js?v=16"></script>
-  <script src="js/game.js?v=16"></script>
-  <script src="js/ui.js?v=16"></script>
-  <script src="js/tests.js?v=16"></script>
-  <script src="js/main.js?v=16"></script>
+  <script src="js/scoring.js?v=17"></script>
+  <script src="js/sound.js?v=17"></script>
+  <script src="js/store.js?v=17"></script>
+  <script src="js/i18n.js?v=17"></script>
+  <script src="js/net.js?v=17"></script>
+  <script src="js/ai.js?v=17"></script>
+  <script src="js/game.js?v=17"></script>
+  <script src="js/ui.js?v=17"></script>
+  <script src="js/tests.js?v=17"></script>
+  <script src="js/main.js?v=17"></script>
 </body>
 </html>
